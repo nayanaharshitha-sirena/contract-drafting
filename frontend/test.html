@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legal Agent Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #0a0a0a; color: white; }
+        input, button, textarea { padding: 10px; margin: 5px; width: 100%; background: #1a1a1a; color: white; border: 1px solid #333; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background: #00aa0022; border: 1px solid #00aa00; }
+        .disconnected { background: #aa000022; border: 1px solid #aa0000; }
+        .error { color: #ff6b6b; background: #330000; padding: 10px; border-radius: 5px; }
+        pre { background: #1a1a1a; padding: 15px; border-radius: 5px; overflow: auto; max-height: 500px; }
+        .debug { font-size: 12px; color: #888; margin-top: 20px; border-top: 1px solid #333; padding-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>⚖️ Legal Agent Test Page</h1>
+    
+    <div id="backendStatus" class="status disconnected">Checking backend connection...</div>
+    <div id="ollamaStatus" class="status disconnected">Checking Ollama connection...</div>
+    <div id="modelStatus" class="status disconnected">Checking model...</div>
+    
+    <h3>Test 1: Basic Connection</h3>
+    <button onclick="testConnection()">Test Backend Connection</button>
+    
+    <h3>Test 2: Generate Contract</h3>
+    <input type="text" id="prompt" value="Generate a short NDA between Apple and Google in California" size="50">
+    <button onclick="generateContract()">Generate Contract</button>
+    
+    <h3>Test 3: Test Ollama Directly</h3>
+    <button onclick="testOllama()">Test Ollama</button>
+    
+    <div id="errorDisplay" class="error" style="display: none;"></div>
+    
+    <h3>Response:</h3>
+    <pre id="response">Waiting for test...</pre>
+    
+    <div class="debug" id="debug"></div>
+
+    <script>
+        const BASE_URL = 'http://localhost:3001';
+        
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorDisplay');
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = '❌ ' + msg;
+        }
+        
+        function hideError() {
+            document.getElementById('errorDisplay').style.display = 'none';
+        }
+        
+        function debug(msg) {
+            const debugDiv = document.getElementById('debug');
+            debugDiv.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + msg + '</div>';
+        }
+        
+        async function testConnection() {
+            debug('Testing connection...');
+            document.getElementById('response').textContent = 'Testing...';
+            hideError();
+            
+            try {
+                const res = await fetch(`${BASE_URL}/api/health`);
+                debug('Health check response status: ' + res.status);
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                debug('Health check data: ' + JSON.stringify(data));
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.backend === 'running') {
+                    document.getElementById('backendStatus').className = 'status connected';
+                    document.getElementById('backendStatus').textContent = '✅ Backend Connected';
+                }
+                if (data.ollama === 'connected') {
+                    document.getElementById('ollamaStatus').className = 'status connected';
+                    document.getElementById('ollamaStatus').textContent = '✅ Ollama Connected';
+                }
+                if (data.model) {
+                    document.getElementById('modelStatus').className = 'status connected';
+                    document.getElementById('modelStatus').textContent = `✅ Using model: ${data.model}`;
+                }
+            } catch (err) {
+                debug('Error: ' + err.message);
+                showError(err.message);
+                document.getElementById('response').textContent = 'Error: ' + err.message;
+                document.getElementById('backendStatus').textContent = '❌ Backend Not Connected';
+            }
+        }
+        
+        async function generateContract() {
+            const prompt = document.getElementById('prompt').value;
+            debug('Generating contract for: ' + prompt);
+            document.getElementById('response').textContent = 'Generating contract... (this may take 30-60 seconds)';
+            hideError();
+            
+            try {
+                debug('Sending request to backend...');
+                const res = await fetch(`${BASE_URL}/api/generate`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+                
+                debug('Response status: ' + res.status);
+                
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    debug('Error response: ' + errorText);
+                    throw new Error(`HTTP error! status: ${res.status}, body: ${errorText}`);
+                }
+                
+                const data = await res.json();
+                debug('Response received, success: ' + data.success);
+                
+                if (data.success) {
+                    if (data.contract) {
+                        debug('Contract length: ' + data.contract.length + ' characters');
+                        document.getElementById('response').textContent = data.contract;
+                    } else {
+                        debug('No contract in response');
+                        document.getElementById('response').textContent = 'No contract in response: ' + JSON.stringify(data);
+                    }
+                } else {
+                    debug('Error in response: ' + data.error);
+                    showError(data.error);
+                    document.getElementById('response').textContent = 'Error: ' + data.error;
+                }
+            } catch (err) {
+                debug('Fetch error: ' + err.message);
+                showError(err.message);
+                document.getElementById('response').textContent = 'Error: ' + err.message;
+            }
+        }
+        
+        async function testOllama() {
+            debug('Testing Ollama directly...');
+            document.getElementById('response').textContent = 'Testing Ollama...';
+            hideError();
+            
+            try {
+                const res = await fetch('http://localhost:11434/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'legal-expert:latest',
+                        prompt: 'Generate a one sentence NDA',
+                        stream: false
+                    })
+                });
+                
+                debug('Ollama response status: ' + res.status);
+                
+                if (!res.ok) {
+                    throw new Error(`Ollama HTTP error! status: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                debug('Ollama response received');
+                document.getElementById('response').textContent = data.response || JSON.stringify(data);
+                
+            } catch (err) {
+                debug('Ollama error: ' + err.message);
+                showError('Ollama error: ' + err.message);
+                document.getElementById('response').textContent = 'Ollama error: ' + err.message;
+            }
+        }
+        
+        // Test connection on page load
+        testConnection();
+    </script>
+</body>
+</html>

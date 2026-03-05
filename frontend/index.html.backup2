@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Agent - Contract Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 900px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .examples {
+            margin-top: 20px;
+        }
+        
+        .examples h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .example-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .chip {
+            background: #f0f0f0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .chip:hover {
+            background: #e0e0e0;
+        }
+        
+        .result {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .result-header h3 {
+            color: #333;
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .result-actions button {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 14px;
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .contract-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .contract-types {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .type-badge {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚖️ Legal Agent</h1>
+            <p>AI-Powered Professional Contract Generator</p>
+        </div>
+        
+        <div class="content">
+            <div id="status" class="status disconnected">
+                🔌 Checking connection to backend...
+            </div>
+            
+            <div class="contract-types">
+                <span class="type-badge">📄 NDAs</span>
+                <span class="type-badge">💼 Employment</span>
+                <span class="type-badge">🏢 Lease</span>
+                <span class="type-badge">🤝 Service</span>
+                <span class="type-badge">💰 Loan</span>
+                <span class="type-badge">🤲 Partnership</span>
+            </div>
+            
+            <div class="input-group">
+                <textarea 
+                    id="prompt" 
+                    placeholder="Describe the contract you need... (e.g., 'Generate an NDA between Apple and Google in California')"
+                >Generate an NDA between Apple Inc. and Google LLC in California</textarea>
+            </div>
+            
+            <button id="generateBtn" onclick="generateContract()">Generate Contract</button>
+            
+            <div class="examples">
+                <h3>📋 Try these examples:</h3>
+                <div class="example-chips">
+                    <span class="chip" onclick="setPrompt('Generate an NDA between Apple Inc. and Google LLC in California')">NDA (California)</span>
+                    <span class="chip" onclick="setPrompt('Create an employment agreement for a software engineer in New York with $150,000 salary')">Employment (NY)</span>
+                    <span class="chip" onclick="setPrompt('Draft a commercial lease for retail space in Texas, 5-year term')">Lease (Texas)</span>
+                    <span class="chip" onclick="setPrompt('Generate a service agreement between a marketing agency and a client')">Service Agreement</span>
+                </div>
+            </div>
+            
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Generating your professional contract... This may take 30-60 seconds</p>
+                <p style="font-size: 12px; color: #666;">The agent is drafting all clauses including parties, recitals, definitions, obligations, indemnification, liability, and more.</p>
+            </div>
+            
+            <div id="result" class="result">
+                <div class="result-header">
+                    <h3>📄 Generated Contract</h3>
+                    <div class="result-actions">
+                        <button onclick="downloadContract()">📥 Download</button>
+                        <button onclick="copyContract()">📋 Copy</button>
+                    </div>
+                </div>
+                <div id="contractContent" class="contract-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        let currentContract = '';
+
+        // Check connection immediately
+        checkConnection();
+
+        async function checkConnection() {
+            const statusDiv = document.getElementById('status');
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusDiv.className = 'status connected';
+                    statusDiv.innerHTML = `✅ Connected to backend | Model: ${data.model || 'llama3'}`;
+                    console.log('Backend connected:', data);
+                } else {
+                    throw new Error('Invalid response');
+                }
+            } catch (error) {
+                statusDiv.className = 'status disconnected';
+                statusDiv.innerHTML = '❌ Cannot connect to backend. Make sure it\'s running: cd backend && npm start';
+                console.error('Connection error:', error);
+            }
+        }
+
+        async function generateContract() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('generateBtn').disabled = true;
+
+            try {
+                console.log('Sending request to backend...');
+                
+                const response = await fetch(`${API_URL}/agent/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: prompt })
+                });
+
+                const data = await response.json();
+                console.log('Response received:', data);
+
+                // Hide loading
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('generateBtn').disabled = false;
+
+                if (data.success && data.contract) {
+                    currentContract = data.contract;
+                    document.getElementById('contractContent').textContent = data.contract;
+                    document.getElementById('result').classList.add('show');
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to generate contract'));
+                }
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('generateBtn').disabled = false;
+                alert('Connection error: ' + error.message);
+            }
+        }
+
+        function downloadContract() {
+            if (!currentContract) return;
+            
+            const blob = new Blob([currentContract], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `contract_${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function copyContract() {
+            if (!currentContract) return;
+            
+            navigator.clipboard.writeText(currentContract).then(() => {
+                alert('Contract copied to clipboard!');
+            }).catch(() => {
+                alert('Failed to copy');
+            });
+        }
+
+        function setPrompt(text) {
+            document.getElementById('prompt').value = text;
+        }
+    </script>
+</body>
+</html>

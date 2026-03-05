@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legal Agent - Professional Contract Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            border-radius: 10px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #1a1a1a;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .status.connected {
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+        
+        .chat-container {
+            background: #1a1a1a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .message {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .message.agent .avatar {
+            background: #3b82f6;
+        }
+        
+        .message.user .avatar {
+            background: #10b981;
+        }
+        
+        .content {
+            max-width: 70%;
+            padding: 15px;
+            border-radius: 10px;
+            background: #2d2d2d;
+        }
+        
+        .message.user .content {
+            background: #3b82f6;
+        }
+        
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid #333;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            flex: 2;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #2d2d2d;
+            color: #fff;
+            border: 1px solid #444;
+            flex: 1;
+        }
+        
+        .btn-secondary:hover {
+            background: #3d3d3d;
+            border-color: #3b82f6;
+        }
+        
+        .examples {
+            margin-top: 20px;
+        }
+        
+        .examples h3 {
+            margin-bottom: 15px;
+            color: #888;
+        }
+        
+        .example-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .chip {
+            padding: 8px 16px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .chip:hover {
+            border-color: #3b82f6;
+            background: #3d3d3d;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #1a1a1a;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            background: #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+        
+        .modal-header h3 {
+            color: #fff;
+        }
+        
+        .modal-header button {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .modal-header button:hover {
+            color: #fff;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(90vh - 80px);
+        }
+        
+        .contract-preview {
+            background: #0a0a0a;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .session-info {
+            background: #2d2d2d;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #888;
+        }
+        
+        .edit-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #2d2d2d;
+            border-radius: 8px;
+        }
+        
+        .edit-section h4 {
+            margin-bottom: 15px;
+            color: #3b82f6;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #333;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚖️ Legal Agent</h1>
+            <div id="connectionStatus" class="status">Checking connection...</div>
+            <div id="dateDisplay" class="status" style="margin-top: 5px;"></div>
+        </header>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message agent">
+                    <div class="avatar">⚖️</div>
+                    <div class="content">
+                        <strong>Legal Agent</strong>
+                        <p>Hello! I can help you generate professional contracts. You can also edit any contract after generation.</p>
+                        <p>Try asking for:</p>
+                        <ul>
+                            <li>"Create an employment agreement for a software engineer"</li>
+                            <li>"Draft an independent contractor agreement for a web developer"</li>
+                            <li>"Generate an NDA between two companies"</li>
+                        </ul>
+                        <p>After generating, you can say: "Edit the contract to change the payment terms"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <textarea id="userInput" rows="3" placeholder="Describe the contract you need..."></textarea>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="sendMessage()">Generate Contract</button>
+                    <button class="btn-secondary" onclick="clearChat()">Clear Chat</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="examples">
+            <h3>📋 Try these examples:</h3>
+            <div class="example-chips">
+                <span class="chip" onclick="setExample('contractor')">Independent Contractor</span>
+                <span class="chip" onclick="setExample('nda')">NDA</span>
+                <span class="chip" onclick="setExample('employment')">Employment</span>
+                <span class="chip" onclick="setExample('lease')">Lease</span>
+                <span class="chip" onclick="setExample('service')">Service Agreement</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contract Modal -->
+    <div class="modal" id="contractModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📄 Generated Contract</h3>
+                <button onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="session-info" id="sessionInfo"></div>
+                <div class="contract-preview" id="contractPreview"></div>
+                
+                <div class="edit-section">
+                    <h4>✏️ Edit Contract</h4>
+                    <textarea id="editInput" rows="3" placeholder="Tell me what to change... (e.g., 'Change the payment to $20,000' or 'Add a non-compete clause')"></textarea>
+                    <div class="button-group" style="margin-top: 15px;">
+                        <button class="btn-primary" onclick="editContract()">Apply Changes</button>
+                        <button class="btn-secondary" onclick="downloadContract()">Download</button>
+                        <button class="btn-secondary" onclick="copyContract()">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal" id="loadingModal">
+        <div class="modal-content" style="background: transparent; box-shadow: none;">
+            <div class="loading">
+                <div class="spinner"></div>
+                <h3>Generating your contract...</h3>
+                <p>This may take 30-60 seconds</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:3001';
+        let currentSessionId = null;
+        let currentContract = '';
+
+        // Check connection on load
+        checkConnection();
+        updateDate();
+
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_URL}/api/health`);
+                const data = await response.json();
+                const status = document.getElementById('connectionStatus');
+                status.textContent = '✅ Connected to backend';
+                status.className = 'status connected';
+                
+                if (data.currentDate) {
+                    document.getElementById('dateDisplay').textContent = `📅 Today: ${data.currentDate}`;
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').textContent = '❌ Cannot connect to backend';
+            }
+        }
+
+        function updateDate() {
+            const date = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('dateDisplay').textContent = `📅 Today: ${date.toLocaleDateString('en-US', options)}`;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            addMessage('user', message);
+            input.value = '';
+
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_URL}/api/agent/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: message,
+                        sessionId: currentSessionId 
+                    })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    currentContract = data.contract;
+                    if (data.sessionId) {
+                        currentSessionId = data.sessionId;
+                    }
+                    
+                    showContract(data.contract, data.sessionId);
+                    addMessage('agent', data.message || '✅ Contract generated!');
+                } else {
+                    addMessage('agent', '❌ Error: ' + data.error);
+                }
+
+            } catch (error) {
+                hideLoading();
+                addMessage('agent', '❌ Connection error: ' + error.message);
+            }
+        }
+
+        async function editContract() {
+            const editInput = document.getElementById('editInput');
+            const editRequest = editInput.value.trim();
+            
+            if (!editRequest || !currentSessionId) return;
+
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_URL}/api/agent/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: editRequest,
+                        sessionId: currentSessionId 
+                    })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    currentContract = data.contract;
+                    document.getElementById('contractPreview').textContent = data.contract;
+                    addMessage('agent', '✅ ' + data.message);
+                    editInput.value = '';
+                } else {
+                    addMessage('agent', '❌ Edit failed: ' + data.error);
+                }
+
+            } catch (error) {
+                hideLoading();
+                addMessage('agent', '❌ Edit error: ' + error.message);
+            }
+        }
+
+        function addMessage(role, content) {
+            const chat = document.getElementById('chatMessages');
+            const msg = document.createElement('div');
+            msg.className = `message ${role}`;
+            msg.innerHTML = `
+                <div class="avatar">${role === 'user' ? '👤' : '⚖️'}</div>
+                <div class="content">${content.replace(/\n/g, '<br>')}</div>
+            `;
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function showContract(contract, sessionId) {
+            document.getElementById('contractPreview').textContent = contract;
+            
+            if (sessionId) {
+                document.getElementById('sessionInfo').innerHTML = `
+                    <strong>Session ID:</strong> ${sessionId}<br>
+                    <strong>Generated:</strong> ${new Date().toLocaleString()}
+                `;
+            }
+            
+            document.getElementById('contractModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('contractModal').classList.remove('show');
+        }
+
+        function showLoading() {
+            document.getElementById('loadingModal').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingModal').classList.remove('show');
+        }
+
+        function downloadContract() {
+            if (!currentContract) return;
+            
+            const blob = new Blob([currentContract], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `contract_${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function copyContract() {
+            if (!currentContract) return;
+            navigator.clipboard.writeText(currentContract);
+            alert('Contract copied to clipboard!');
+        }
+
+        function clearChat() {
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="message agent">
+                    <div class="avatar">⚖️</div>
+                    <div class="content">
+                        <strong>Legal Agent</strong>
+                        <p>Chat cleared. How can I help you?</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setExample(type) {
+            const examples = {
+                contractor: "Draft an independent contractor agreement for a freelance web developer (Alex Kumar) to build an e-commerce website for Retail Solutions Inc. Fixed fee $15,000, delivery in 3 months, includes source code ownership, 6 months support period, confidentiality of business logic, limitation of liability equal to contract value, governing law of Washington state.",
+                
+                nda: "Generate a mutual non-disclosure agreement between Tesla Inc. and Quantum Battery Technologies for discussing solid-state battery technology. Term of 3 years, includes arbitration in Delaware, governing law of California.",
+                
+                employment: "Create an employment contract for a Senior Software Engineer at Microsoft in Seattle. Salary $180,000 per year, 20 days PTO, 10% annual bonus, 2 months notice period, includes non-compete clause for 1 year.",
+                
+                lease: "Draft a residential lease agreement in New York City for a 2-bedroom apartment. Monthly rent $3,500, security deposit $3,500, 1 year term, no pets, tenant pays utilities, landlord responsible for maintenance.",
+                
+                service: "Create a service agreement between a marketing agency and a client for social media management. Monthly fee $5,000, 6 month term, includes weekly reports, content ownership transfers to client, 30 day cancellation notice."
+            };
+            
+            document.getElementById('userInput').value = examples[type];
+        }
+    </script>
+</body>
+</html>
